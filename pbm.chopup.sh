@@ -12,7 +12,7 @@
 
 # setup
 #
-ALPHABET="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/. "
+ALPHABET="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./ "
 ALPHASET=`echo "$ALPHABET" |
 	  sed -e 's/./& /g' -e 's/\./dot/' -e 's/\//slash/' -e 's/  $/space/'`
 DIR="b64dir"
