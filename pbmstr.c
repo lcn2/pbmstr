@@ -1,12 +1,12 @@
 /*
- * fixedpbm - form a pbm file using builtin fixed font from args
+ * pbmtext - form a pbm file using builtin fixed font from args
  *
  * usage:
- *	fixedpbm line1 line2 longer_line3 last_line > foo.pbm
+ *	pbmtext line1 line2 longer_line3 last_line > foo.pbm
  *
- * @(#) $Revision$
- * @(#) $Id$
- * @(#) $Source$
+ * @(#) $Revision: 1.1 $
+ * @(#) $Id: pbmtext.c,v 1.1 2001/01/27 19:10:29 chongo Exp chongo $
+ * @(#) $Source: /usr/local/src/cmd/pbmtext/RCS/pbmtext.c,v $
  *
  * Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
  *
@@ -34,19 +34,20 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 
 /*
- * builtin fixed font - constructed by b64.chopup.sh
+ * builtin 8x13 fixed font - constructed by b64.chopup.sh
  *
  * alphabet[i] - the i-th character (0 <= i <= 64)
  * charnum[c]  - alphabet index of character c, c == alphabet[charnum[(int)c]]
- * font[c]     - array of GLYPH_PIXEL_ROWS octets for PMB font glyph
- * font[c][r]  - row r of char c of PMB font glyph
+ * font[c]     - array of GLYPH_PIXEL_ROWS octets for PBM font glyph
+ * font[c][r]  - row r of char c of PBM font glyph
  */
 #define ALPHABET_LEN 65		/* glyphs in alphabet + trailing space */
-#define GLYPH_PIXEL_ROWS 13	/* font is this many pixels high */
-#define GLYPH_PIXEL_COLS 8	/* font is this many pixels wide - XXX should be 7 */
+#define GLYPH_PIXEL_ROWS 13	/* font is this many pixels high (8x13 font) */
+#define GLYPH_PIXEL_COLS 8	/* font is this many pixels wide (8x13 font) */
 unsigned char alphabet[ALPHABET_LEN] =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz/. ";
 int charnum[256] = {
@@ -130,82 +131,167 @@ unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {
     {0xff,0xff,0xff,0x88,0xeb,0xf7,0xeb,0xdd,0x9c,0xff,0xff,0xff,0xff}, /* x */
     {0xff,0xff,0xff,0x88,0xdd,0xdd,0xeb,0xe3,0xf7,0xf7,0xf7,0xcf,0xff}, /* y */
     {0xff,0xff,0xff,0xc1,0xdb,0xf7,0xef,0xdd,0xc1,0xff,0xff,0xff,0xff}, /* z */
-    {0xfe,0xfd,0xfd,0xfb,0xfb,0xf7,0xf7,0xef,0xef,0xdf,0xff,0xff,0xff}, /* / */
     {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xef,0xff,0xff,0xff,0xff}, /* . */
+    {0xfe,0xfd,0xfd,0xfb,0xfb,0xf7,0xf7,0xef,0xef,0xdf,0xff,0xff,0xff}, /* / */
     {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff}  /*   */
 };
 
+
+/*
+ * static declarations
+ */
+static char *program = NULL;
+static char *pbmtext(char **str, int str_cnt, int *pbm_len);
+
+
 main(int argc, char *argv[])
 {
-    int glyph_cols;	/* image columns in font chars, longest arg in chars */
-    int glyph_rows;	/* image rows in font chars */
-    int pixel_cols;	/* image is this many pixels wide */
-    int pixel_rows;	/* image is this many pixels high */
-    unsigned char pmb_header[1+1+1+10+1+10+1+1];  /* PMB image header */
-    int pmb_header_len;				  /* actual PMB header length */
-    unsigned char *pmb;		/* complete pmg image */
-    unsigned char *row_p;	/* start of glyph row */
-    int row;			/* current glyph row number */
+    int pbm_len;		/* image size in octets */
+    char *pbm;			/* formed image */
+    char *p;
     int i;
 
     /*
      * arg check
      */
+    program = argv[0];
     if (argc < 2) {
-	fprintf(stderr, "usage: %s line1 [line2 ...]\n", argv[0]);
+	fprintf(stderr, "usage: %s line1 [line2 ...]\n", program);
 	exit(1);
     }
-    glyph_rows = argc-1;
-    pixel_rows = glyph_rows * GLYPH_PIXEL_ROWS;
+
+    /*
+     * create the pbm
+     */
+    pbm = pbmtext(argv+1, argc-1, &pbm_len);
+    if (pbm == NULL) {
+	fprintf(stderr, "%s: unable to form image\n", program);
+	exit(3);
+    }
+
+    /*
+     * write the PBM image
+     */
+    fwrite(pbm, pbm_len, 1, stdout);
+    exit(0);
+}
+
+
+/*
+ * pbmtext - allocate anbd load a pbm in memory
+ *
+ * given:
+ *	char **str		array of pointers to string to load
+ *	int str_cnt		number of strins in str
+ *	int *pbm_len		point to where pbm image length is placed
+ *
+ * sets:
+ *	*pbm_len	value is set to the full PBM image size in octets
+ *
+ * returns
+ *	char *		pbm image (*pbm_len set ti size in octets) or NULL
+ *
+ * This function return NULL if passed a bad arg (str == NULL or str_cnt <= 0
+ * or pbm_len == NULL); all strings in the string list are empty; the image
+ * image is too large (> 2^31 octets).
+ */
+static char *
+pbmtext(char **str, int str_cnt, int *pbm_len)
+{
+    int glyph_rows;	/* image rows in font chars */
+    int glyph_cols;	/* image columns in font chars, longest arg in chars */
+    unsigned char pbm_header[1+1+1+10+1+10+1+1];  /* tmp PMB header, max size */
+    int pbm_header_len;				  /* actual PBM header length */
+    char *pbm;		/* complete pmg image */
+    char *row_p;	/* start of glyph row */
+    int row;		/* current glyph row number */
+    int pbm_size;	/* size in octets of the image after the header */
+    char *p;
+    char *q;
+    int i;
+    int j;
+
+    /*
+     * firewall
+     */
+    if (str == NULL || str_cnt <= 0 || pbm_len == NULL || str_cnt <= 0) {
+	/* bogus arg */
+	return NULL;
+    }
 
     /*
      * determine the longest arg
      *
-     * The longest arg determines how wide the image will be.
+     * The longest string determines how wide (in terms of glyphs) the image 
+     * will be.  The number of strings determine how tall (in terms of glyphs)
+     * the image will be.
      */
     glyph_cols = 0;
-    for (i=1; i < argc; ++i) {
-	if (strlen(argv[i]) > glyph_cols) {
-	    glyph_cols = strlen(argv[i]);
+    for (i=0; i < str_cnt; ++i) {
+	if (strlen(str[i]) > glyph_cols) {
+	    glyph_cols = strlen(str[i]);
 	}
     }
     if (glyph_cols <= 0) {
-	fprintf(stderr, "%s: one arg must have at least 1 char\n", argv[0]);
-	exit(2);
+	/* all strings are empty */
+    	return NULL;
     }
-    pixel_cols = glyph_cols * GLYPH_PIXEL_COLS;
+    glyph_rows = str_cnt;
 
     /*
-     * format PMB prefix
+     * Catch the case where we would create an image that would exceed the
+     * pbm_header size (10 digit pixel width or height) or that would create
+     * an image > 2^31-1 octets in size.  We account the the extra guard
+     * octet as well.
      */
-    sprintf((char *)pmb_header, "P4\n%d %d\n", pixel_cols, pixel_rows);
+    if ((long long)glyph_cols*GLYPH_PIXEL_COLS > 9999999999LL ||
+    	(long long)glyph_rows*GLYPH_PIXEL_ROWS > 9999999999LL ||
+        ((long long)glyph_cols * (long long)GLYPH_PIXEL_COLS *
+	 (long long)glyph_rows * (long long)GLYPH_PIXEL_ROWS) >
+	(0x7fffffffLL-((long long)sizeof(pbm_header)))-1) {
+	/* size too large */
+    	return NULL;
+    }
 
     /*
-     * allocate and initialize PMB image
+     * determine what the final PBM header will look like
      */
-    pmb_header_len = strlen(pmb_header);
-    pmb = (unsigned char *)malloc(pmb_header_len + (pixel_rows*glyph_cols));
-    if (pmb == NULL) {
-	fprintf(stderr, "%s: malloc failed\n", argv[0]);
-	exit(3);
+    pbm_size = glyph_rows * GLYPH_PIXEL_ROWS * glyph_cols;
+    sprintf((char *)pbm_header, "P4\n%d %d\n",
+	    glyph_cols * GLYPH_PIXEL_COLS,
+	    glyph_rows * GLYPH_PIXEL_ROWS);
+    pbm_header_len = strlen(pbm_header);
+
+    /*
+     * allocate PBM image storage
+     */
+    pbm = (unsigned char *)malloc(pbm_header_len + pbm_size + 1);
+    if (pbm == NULL) {
+	/* malloc failure */
+	return NULL;
     }
-    memset(pmb, 0xff, pmb_header_len + (pixel_rows*glyph_cols));
-    strcpy(pmb, pmb_header);
+
+    /*
+     * Initialize the PBM image
+     *
+     * We will set the image to black pixels and load PMB header.
+     */
+    strcpy(pbm, pbm_header);
+    memset(pbm+pbm_header_len, 0xff, pbm_size);
 
     /*
      * fill in the image, one glyph row at a time
      */
-    for (row_p = pmb + pmb_header_len, row=0;
+    for (row_p = pbm + pbm_header_len, row=0;
     	 row < glyph_rows;
 	 ++row, row_p += (GLYPH_PIXEL_ROWS * glyph_cols)) {
 
 	int col;		/* current glyph column number */
-	char *p;		/* current char to form */
 
 	/*
 	 * fill in the glyph image row, one column at a tme
 	 */
-	for (p = argv[row+1], col = 0; col < glyph_cols; ++col) {
+	for (p = str[row], col = 0; col < glyph_cols; ++col) {
 
 	    unsigned char *glyph;	/* current glyph to load */
 	    unsigned char *col_p;	/* start of glyph col in row_p */
@@ -232,12 +318,13 @@ main(int argc, char *argv[])
 	}
     }
 
-    /* XXX - should convert 8 char wide font into 7 char wide */
-    /* XXX - remove the high bits of each octet beyond PMB header and repack */
+    /*
+     * deposit the real image size in octets
+     */
+    *pbm_len = pbm_header_len + pbm_size;
 
     /*
-     * write the PBM image
+     * return the PBM
      */
-    fwrite(pmb, pmb_header_len + (pixel_rows*glyph_cols), 1, stdout);
-    exit(0);
+    return pbm;
 }
