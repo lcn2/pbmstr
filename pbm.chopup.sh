@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# b64.chopup.sh - form bit patterns for the fixed font
+# pbm.chopup.sh - form bit patterns for the fixed font
 #
 # The fixed font that is builtin to pbmtext is in a 7 pixel width by
 # 13 pixel high grid.  It is the 7x13 font.
@@ -12,13 +12,11 @@
 
 # setup
 #
-ALPHABET="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz./ "
-ALPHASET=`echo "$ALPHABET" |
-	  sed -e 's/./& /g' -e 's/\./dot/' -e 's/\//slash/' -e 's/  $/space/'`
-DIR="b64dir"
+ALPHABET=' !"#$%&'"'"'()*+,-./0123456789:;<=>?@ABCDEFGHJIKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~'
+DIR="fontdir"
 rm -rf $DIR
 mkdir $DIR
-rm -f $DIR/tmp $DIR/b64.bit
+rm -f $DIR/tmp $DIR/font.bit
 
 # form the bit file
 #
@@ -27,7 +25,7 @@ rm -f $DIR/tmp $DIR/b64.bit
 	sed -e '1,3d' -e 's/ //g' -e 's/,//g' -e 's/};//g' \
 	    -e 's/0x\(.\)\(.\)/\2\1/g' |
 	tr -d '\012' |
-	fold --width=118 |
+	fold --width=170 |
 	sed -e 's/0/,,,,/g' -e 's/1/,,,!/g' -e 's/2/,,!,/g' -e 's/3/,,!!/g' \
 	    -e 's/4/,!,,/g' -e 's/5/,!,!/g' -e 's/6/,!!,/g' -e 's/7/,!!!/g' \
 	    -e 's/8/!,,,/g' -e 's/9/!,,!/g' -e 's/a/!,!,/g' -e 's/b/!,!!/g' \
@@ -35,35 +33,62 @@ rm -f $DIR/tmp $DIR/b64.bit
 	    -e 's/\(.\)\(.\)\(.\)\(.\)/\4\3\2\1/g' \
 	    -e 's/^.......//' -e 's/.......$//') |
     tail +7 |
-    head -13 > b64.bit
+    head -13 > font.bit
 
 # split the bit file into individual char files
 #
-cp b64.bit $DIR/b64.bit
-for i in $ALPHASET; do
-    sed -e 's/^\(.......\)\(.*\)$/\1/' $DIR/b64.bit > $DIR/$i.bit
-    sed -e 's/^\(.......\)\(.*\)$/\2/' $DIR/b64.bit > $DIR/tmp
-    mv $DIR/tmp $DIR/b64.bit
+cp font.bit $DIR/font.bit
+j=0
+while [ "$j" -lt 95 ]; do
+    if [ "$j" -lt 10 ]; then
+	file="font0$j.bit"
+    else
+	file="font$j.bit"
+    fi
+    sed -e 's/^\(.......\)\(.*\)$/\1/' $DIR/font.bit > $DIR/$file
+    sed -e 's/^\(.......\)\(.*\)$/\2/' $DIR/font.bit > $DIR/tmp
+    mv $DIR/tmp $DIR/font.bit
+    j=`expr $j + 1`
 done
-rm -f $DIR/tmp $DIR/b64.bit
+rm -f $DIR/tmp $DIR/font.bit
 
 # convert each char set into a C array
 #
-echo '#define ALPHABET_LEN 65		/* glyphs in alphabet + space */'
+echo '#define ALPHABET_LEN 256		/* glyphs in alphabet + space */'
 echo '#define GLYPH_PIXEL_ROWS 13	/* a symbol is this many pixels high */'
 echo "unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {"
-for i in $ALPHASET; do
+j=0
+while [ "$j" -lt 32 ]; do
+    echo -n "   {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,"
+    echo "0xff}, /* $j */"
+    j=`expr $j + 1`
+done
+j=0
+while [ "$j" -lt 95 ]; do
 
     # convert to hex chars and reverse video
     #
-    echo -n '    {'
+    if [ "$j" -lt 10 ]; then
+	file="font0$j.bit"
+    else
+	file="font$j.bit"
+    fi
+    k=`expr $j + 32`
+    echo -n '   {'
     sed -e 's/\(...\)\(....\)/,\1 \2/' \
 	-e 's/,,,,/f/g' -e 's/,,,!/e/g' -e 's/,,!,/d/g' -e 's/,,!!/c/g' \
 	-e 's/,!,,/b/g' -e 's/,!,!/a/g' -e 's/,!!,/9/g' -e 's/,!!!/8/g' \
 	-e 's/!,,,/7/g' -e 's/!,,!/6/g' -e 's/!,!,/5/g' -e 's/!,!!/4/g' \
 	-e 's/!!,,/3/g' -e 's/!!,!/2/g' -e 's/!!!,/1/g' -e 's/!!!!/0/g' \
-	-e 's/ //' -e 's/^.*/0x&,/' $DIR/$i.bit | 
+	-e 's/ //' -e 's/^.*/0x&,/' $DIR/$file | 
 	tr -d '\012' | sed -e 's/,$//'
-    echo '}, /* '$i' */'
+    echo '}, /* '$k' */'
+    j=`expr $j + 1`
+done
+j=127
+while [ "$j" -lt 256 ]; do
+    echo -n "   {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,"
+    echo "0xff}, /* $j */"
+    j=`expr $j + 1`
 done | sed -e '$s/}, \//}  \//'
 echo '};'

@@ -2,9 +2,9 @@
 #
 # title - one line synopsis
 #
-# @(#) $Revision: 1.1 $
-# @(#) $Id: Makefile,v 1.1 2001/01/27 19:18:20 chongo Exp chongo $
-# @(#) $Source: /usr/local/src/cmd/pbmtext8x13/RCS/Makefile,v $
+# @(#) $Revision: 1.2 $
+# @(#) $Id: Makefile,v 1.2 2001/01/29 07:50:19 chongo Exp chongo $
+# @(#) $Source: /usr/local/src/cmd/pbmtext/RCS/Makefile,v $
 #
 # Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
 #
@@ -43,12 +43,12 @@ all: ${TARGETS}
 pbmtext: pbmtext.c
 	${CC} pbmtext.c -o pbmtext
 
-b64.c: b64.chopup.sh
-	./b64.chopup.sh > b64.c
+font.c: pbm.chopup.sh
+	./pbm.chopup.sh > font.c
 
 clean:
-	rm -f b64.bit b64.c
-	rm -rf b64dir
+	rm -f font.bit font.c
+	rm -rf fontdir
 
 clobber: clean
 	rm -f ${TARGETS}
