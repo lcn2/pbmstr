@@ -2,9 +2,9 @@
 #
 # title - one line synopsis
 #
-# @(#) $Revision: 1.2 $
-# @(#) $Id: Makefile,v 1.2 2001/01/29 07:50:19 chongo Exp chongo $
-# @(#) $Source: /usr/local/src/cmd/pbmtext/RCS/Makefile,v $
+# @(#) $Revision: 1.3 $
+# @(#) $Id: Makefile,v 1.3 2001/01/29 08:39:12 chongo Exp chongo $
+# @(#) $Source: /usr/local/src/cmd/pbmstr/RCS/Makefile,v $
 #
 # Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
 #
@@ -36,12 +36,12 @@ SHELL= /bin/sh
 CC= cc
 INSTALL= install
 DESTDIR= /usr/local/bin
-TARGETS = pbmtext
+TARGETS = pbmstr
 
 all: ${TARGETS}
 
-pbmtext: pbmtext.c
-	${CC} pbmtext.c -o pbmtext
+pbmstr: pbmstr.c
+	${CC} pbmstr.c -o pbmstr
 
 font.c: pbm.chopup.sh
 	./pbm.chopup.sh > font.c
