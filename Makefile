@@ -2,9 +2,9 @@
 #
 # title - one line synopsis
 #
-# @(#) $Revision$
-# @(#) $Id$
-# @(#) $Source$
+# @(#) $Revision: 1.1 $
+# @(#) $Id: Makefile,v 1.1 2001/01/27 19:18:20 chongo Exp chongo $
+# @(#) $Source: /usr/local/src/cmd/pbmtext8x13/RCS/Makefile,v $
 #
 # Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
 #
@@ -36,21 +36,22 @@ SHELL= /bin/sh
 CC= cc
 INSTALL= install
 DESTDIR= /usr/local/bin
+TARGETS = pbmtext
 
-all: b64.c fixedpbm
+all: ${TARGETS}
 
-fixedpbm: fixedpbm.c
-	${CC} fixedpbm.c -o fixedpbm
+pbmtext: pbmtext.c
+	${CC} pbmtext.c -o pbmtext
 
 b64.c: b64.chopup.sh
 	./b64.chopup.sh > b64.c
 
 clean:
-	rm -f b64.bit
+	rm -f b64.bit b64.c
 	rm -rf b64dir
 
 clobber: clean
-	rm -f fixedpbm b64.c
+	rm -f ${TARGETS}
 
 install: all
-	${INSTALL} fixedpbm ${DESTDIR}
+	${INSTALL} ${TARGETS} ${DESTDIR}
