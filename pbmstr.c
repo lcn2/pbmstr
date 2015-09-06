@@ -4,9 +4,9 @@
  * usage:
  *	pbmtext line1 line2 longer_line3 last_line > foo.pbm
  *
- * @(#) $Revision: 1.2 $
- * @(#) $Id: pbmtext.c,v 1.2 2001/01/29 07:49:27 chongo Exp chongo $
- * @(#) $Source: /usr/local/src/cmd/pbmtext/RCS/pbmtext.c,v $
+ * @(#) $Revision: 1.3 $
+ * @(#) $Id: pbmstr.c,v 1.3 2001/01/29 08:39:12 chongo Exp $
+ * @(#) $Source: /usr/local/src/bin/pbmstr/RCS/pbmstr.c,v $
  *
  * Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
  *
@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 
 /*
