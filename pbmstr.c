@@ -1,14 +1,10 @@
 /*
- * pbmtext - form a pbm file using builtin fixed font from args
+ * pmbsir - form a pbm file using builtin fixed font from args
  *
  * usage:
  *	pbmtext line1 line2 longer_line3 last_line > foo.pbm
  *
- * @(#) $Revision: 1.4 $
- * @(#) $Id: pbmstr.c,v 1.4 2015/09/06 09:24:32 root Exp $
- * @(#) $Source: /usr/local/src/bin/pbmstr/RCS/pbmstr.c,v $
- *
- * Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
+ * Copyright (c) 2000,2023 by Landon Curt Noll.  All Rights Reserved.
  *
  * Permission to use, copy, modify, and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,
@@ -313,7 +309,7 @@ unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {
 static char *program = NULL;
 static char *pbmtext(char **str, int str_cnt, int *pbm_len);
 
-
+int
 main(int argc, char *argv[])
 {
     int pbm_len;		/* image size in octets */
@@ -392,7 +388,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
     /*
      * determine the longest arg
      *
-     * The longest string determines how wide (in terms of glyphs) the image 
+     * The longest string determines how wide (in terms of glyphs) the image
      * will be.  The number of strings determine how tall (in terms of glyphs)
      * the image will be.
      */
@@ -404,7 +400,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
     }
     if (glyph_cols <= 0) {
 	/* all strings are empty */
-    	return NULL;
+	return NULL;
     }
     glyph_rows = str_cnt;
 
@@ -415,12 +411,12 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
      * octet as well.
      */
     if ((long long)glyph_cols*GLYPH_PIXEL_COLS > 9999999999LL ||
-    	(long long)glyph_rows*GLYPH_PIXEL_ROWS > 9999999999LL ||
+	(long long)glyph_rows*GLYPH_PIXEL_ROWS > 9999999999LL ||
         ((long long)glyph_cols * (long long)GLYPH_PIXEL_COLS *
 	 (long long)glyph_rows * (long long)GLYPH_PIXEL_ROWS) >
 	(0x7fffffffLL-((long long)sizeof(pbm_header)))-1) {
 	/* size too large */
-    	return NULL;
+	return NULL;
     }
 
     /*
@@ -453,7 +449,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
      * fill in the image, one glyph row at a time
      */
     for (row_p = pbm + pbm_header_len, row=0;
-    	 row < glyph_rows;
+	 row < glyph_rows;
 	 ++row, row_p += (GLYPH_PIXEL_ROWS * glyph_cols)) {
 
 	int col;		/* current glyph column number */
@@ -472,7 +468,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
 	     */
 	    if (*p == '\0') {
 		/* no glpyh, leave as default space, end of row */
-	    	break;
+		break;
 	    } else {
 		glyph = font[(int)*p++];
 	    }
@@ -481,9 +477,9 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
 	     * load the glpyh, one pixel row at a time
 	     */
 	    for (col_p = row_p+col, gpix_row = 0;
-	    	 gpix_row < GLYPH_PIXEL_ROWS;
+		 gpix_row < GLYPH_PIXEL_ROWS;
 		 ++gpix_row, col_p += glyph_cols) {
-	    	*col_p = glyph[gpix_row];
+		*col_p = glyph[gpix_row];
 	    }
 	}
     }
