@@ -1,6 +1,6 @@
 #!/usr/bin/env make
 #
-# pmver - determine the version of a perl module
+# pmbsir - form a pbm file using builtin fixed font from args
 #
 # Copyright (c) 2000,2023 by Landon Curt Noll.  All Rights Reserved.
 #
