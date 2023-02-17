@@ -1,12 +1,8 @@
-#!/usr/bin/make
+#!/usr/bin/env make
 #
-# title - one line synopsis
+# pmver - determine the version of a perl module
 #
-# @(#) $Revision: 1.3 $
-# @(#) $Id: Makefile,v 1.3 2001/01/29 08:39:12 chongo Exp chongo $
-# @(#) $Source: /usr/local/src/cmd/pbmstr/RCS/Makefile,v $
-#
-# Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
+# Copyright (c) 2000,2023 by Landon Curt Noll.  All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and
 # its documentation for any purpose and without fee is hereby granted,
@@ -32,11 +28,14 @@
 
 # common prep
 #
-SHELL= /bin/sh
+SHELL= bash
 CC= cc
 INSTALL= install
 DESTDIR= /usr/local/bin
 TARGETS = pbmstr
+RM= rm
+CP= cp
+CHMOD= chmod
 
 all: ${TARGETS}
 
@@ -47,11 +46,11 @@ font.c: pbm.chopup.sh
 	./pbm.chopup.sh > font.c
 
 clean:
-	rm -f font.bit font.c
-	rm -rf fontdir
+	${RM} -f font.bit font.c
+	${RM} -rf fontdir
 
 clobber: clean
-	rm -f ${TARGETS}
+	${RM} -f ${TARGETS}
 
 install: all
 	${INSTALL} ${TARGETS} ${DESTDIR}

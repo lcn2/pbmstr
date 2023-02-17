@@ -4,8 +4,8 @@
  * usage:
  *	pbmtext line1 line2 longer_line3 last_line > foo.pbm
  *
- * @(#) $Revision: 1.3 $
- * @(#) $Id: pbmstr.c,v 1.3 2001/01/29 08:39:12 chongo Exp $
+ * @(#) $Revision: 1.4 $
+ * @(#) $Id: pbmstr.c,v 1.4 2015/09/06 09:24:32 root Exp $
  * @(#) $Source: /usr/local/src/bin/pbmstr/RCS/pbmstr.c,v $
  *
  * Copyright (c) 2000 by Landon Curt Noll.  All Rights Reserved.
