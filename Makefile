@@ -1,6 +1,6 @@
 #!/usr/bin/env make
 #
-# pmbsir - form a pbm file using builtin fixed font from args
+# pmbstr - form a pbm file using builtin fixed font from args
 #
 # Copyright (c) 2000,2023 by Landon Curt Noll.  All Rights Reserved.
 #
