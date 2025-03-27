@@ -2,9 +2,9 @@
  * pmbsir - form a pbm file using builtin fixed font from args
  *
  * usage:
- *	pbmtext line1 line2 longer_line3 last_line > foo.pbm
+ *	./pbmstr 'string 1' '2nd string' 'line3 string' 'the end' > foo.pbm
  *
- * Copyright (c) 2000,2023 by Landon Curt Noll.  All Rights Reserved.
+ * Copyright (c) 2000,2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
  *
  * Permission to use, copy, modify, and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,
@@ -24,14 +24,38 @@
  * OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  *
- * chongo <was here> /\oo/\
+ * chongo (Landon Curt Noll) /\oo/\
  *
- * Share and enjoy!
+ * http://www.isthe.com/chongo/index.html
+ * https://github.com/lcn2
+ *
+ * Share and Enjoy!     :-)
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <sys/errno.h>
+
+
+/*
+ * official version
+ */
+#define VERSION "1.2.1 2025-03-26"          /* format: major.minor YYYY-MM-DD */
+
+
+static const char * const usage =
+  "usage: %s [-h] [-v level] [-V] [-n] string ...\n"
+        "    [-c] [-o offset] arg ...\n"
+        "\n"
+        "    -h            print help message and exit\n"
+        "    -v level      set verbosity level (def level: 0)\n"
+        "    -V            print version string and exit\n"
+        "\n"
+	"    string ...	   string(s) as a line of text to convert to PBM image on stdout\n"
+	"\n"
+	"%s version: %s\n";
 
 
 /*
@@ -43,7 +67,7 @@
 #define ALPHABET_LEN 258	/* glyphs in alphabet */
 #define GLYPH_PIXEL_ROWS 13	/* font is this many pixels high (8x13 font) */
 #define GLYPH_PIXEL_COLS 8	/* font is this many pixels wide (8x13 font) */
-unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {
+static unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {
    {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff}, /* 0 */
    {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff}, /* 1 */
    {0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff}, /* 2 */
@@ -306,8 +330,13 @@ unsigned char font[ALPHABET_LEN][GLYPH_PIXEL_ROWS] = {
 /*
  * static declarations
  */
-static char *program = NULL;
+static char *program = NULL;	/* our name */
+static char *prog = NULL;       /* basename of program */
+static const char * const version = VERSION;
+static long verbosity = 0;      /* verbosity level */
 static char *pbmtext(char **str, int str_cnt, int *pbm_len);
+/**/
+static void pr_usage(FILE *stream);
 
 int
 main(int argc, char *argv[])
@@ -321,9 +350,54 @@ main(int argc, char *argv[])
      * arg check
      */
     program = argv[0];
-    if (argc < 2) {
-	fprintf(stderr, "usage: %s line1 [line2 ...]\n", program);
-	exit(1);
+    while ((i = getopt(argc, argv, ":hv:Vnco:")) != -1) {
+        switch (i) {
+
+        case 'h':                   /* -h - print help message and exit */
+            pr_usage(stderr);
+            exit(2); /* ooo */
+            /*NOTREACHED*/
+
+        case 'v':                   /* v level - set verbosity level */
+            errno = 0;
+            verbosity = strtol(optarg, NULL, 0);
+            if (errno != 0 || verbosity < 0) {
+                verbosity = 0;
+            }
+            break;
+
+        case 'V':                   /* -V - print version string and exit */
+            (void) printf("%s\n", version);
+            exit(2); /* ooo */
+            /*NOTREACHED*/
+
+	case ':':
+            (void) fprintf(stderr, "%s: ERROR: requires an argument -- %c\n", program, optopt);
+            pr_usage(stderr);
+            exit(3); /* ooo */
+            /*NOTREACHED*/
+
+        case '?':
+            (void) fprintf(stderr, "%s: ERROR: illegal option -- %c\n", program, optopt);
+            pr_usage(stderr);
+            exit(3); /* ooo */
+            /*NOTREACHED*/
+
+        default:
+            fprintf(stderr, "%s: ERROR: invalid -flag\n", program);
+            exit(3); /* ooo */
+            /*NOTREACHED*/
+        }
+    }
+    /* skip over command line options */
+    argv += optind;
+    argc -= optind;
+    /* check the arg count */
+    if (argc < 1) {
+        fprintf(stderr, "%s: ERROR: expected at least 1 arg, found: %d\n", program, argc);
+        pr_usage(stderr);
+        exit(3); /* ooo */
+        /*NOTREACHED*/
     }
 
     /*
@@ -344,11 +418,55 @@ main(int argc, char *argv[])
 
 
 /*
- * pbmtext - allocate anbd load a pbm in memory
+ * pr_usage - print usage message
+ *
+ * given:
+ *
+ *    stream - print usage message on stream, NULL ==> stderr
+ */
+static void
+pr_usage(FILE *stream)
+{
+    /*
+     * NULL stream means stderr
+     */
+    if (stream == NULL) {
+        stream = stderr;
+    }
+
+    /*
+     * firewall - change program if NULL
+     */
+    if (program == NULL) {
+        program = "((NULL))";
+    }
+
+    /*
+     * firewall set name if NULL
+     */
+    if (prog == NULL) {
+        prog = rindex(program, '/');
+    }
+    /* paranoia if no / is found */
+    if (prog == NULL) {
+        prog = program;
+    } else {
+        ++prog;
+    }
+
+    /*
+     * print usage message to stderr
+     */
+    fprintf(stream, usage, program, prog, version);
+}
+
+
+/*
+ * pbmtext - allocate and load a pbm in memory
  *
  * given:
  *	char **str		array of pointers to string to load
- *	int str_cnt		number of strins in str
+ *	int str_cnt		number of strings in str
  *	int *pbm_len		point to where pbm image length is placed
  *
  * sets:
@@ -407,7 +525,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
     /*
      * Catch the case where we would create an image that would exceed the
      * pbm_header size (10 digit pixel width or height) or that would create
-     * an image > 2^31-1 octets in size.  We account the the extra guard
+     * an image > 2^31-1 octets in size.  We account the extra guard
      * octet as well.
      */
     if ((long long)glyph_cols*GLYPH_PIXEL_COLS > 9999999999LL ||
@@ -461,7 +579,7 @@ pbmtext(char **str, int str_cnt, int *pbm_len)
 
 	    unsigned char *glyph;	/* current glyph to load */
 	    unsigned char *col_p;	/* start of glyph col in row_p */
-	    int gpix_row;		/* current pixel row in glpyh */
+	    int gpix_row;		/* current pixel row in glyph */
 
 	    /*
 	     * determine which glyph we will form
