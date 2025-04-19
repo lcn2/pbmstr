@@ -4,7 +4,7 @@
  * usage:
  *	./pbmstr 'string 1' '2nd string' 'line3 string' 'the end' > foo.pbm
  *
- * Copyright (c) 2000,2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
+ * Copyright (c) 2000-2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
  *
  * Permission to use, copy, modify, and distribute this software and
  * its documentation for any purpose and without fee is hereby granted,

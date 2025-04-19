@@ -2,8 +2,6 @@
 #
 # pbm.chopup.sh - form bit patterns for the fixed font
 #
-# Copyright (c) 2000,2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
-#
 # NOTE: This tool was used to create font table used in pbmstr.c file.
 #	It is left behind for "historical" purposes.
 #
@@ -15,7 +13,7 @@
 # 13 pixels high, each array consists of 13 octets.  Because the font is
 # 7 pixels wide, the highest order bit in each octet is unused and is set to 0.
 #
-# Copyright (c) 2000,2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
+# Copyright (c) 2000-2001,2015,2023,2025 by Landon Curt Noll.  All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and
 # its documentation for any purpose and without fee is hereby granted,
