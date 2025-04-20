@@ -1,6 +1,6 @@
 # pbmstr
 
-XXX
+Form a pbm file using builtin fixed font from arg.
 
 
 # To install
@@ -8,6 +8,17 @@ XXX
 ```sh
 make clobber all
 sudo make install clobber
+
+
+# Examples
+
+```sh
+$ /usr/local/bin/pbmstr 'chongo was here' > chongo.pbm
+```
+
+```sh
+$ /usr/local/bin/pbmstr 'string 1' '2nd string' 'line3 string' 'the end' > foo.pbm
+```
 ```
 
 
@@ -24,17 +35,6 @@ sudo make install clobber
     string ...	   string(s) as a line of text to convert to PBM image on stdout
 
 pbmstr version: 1.2.1 2025-03-26
-```
-
-
-# Examples
-
-```sh
-/usr/local/bin/pbmstr 'chongo was here' > chongo.pbm
-```
-
-```sh
-/usr/local/bin/pbmstr 'string 1' '2nd string' 'line3 string' 'the end' > foo.pbm
 ```
 
 
